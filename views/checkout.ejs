@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Confirmar compra</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <h1>Confirmar compra</h1>
+        <nav>
+        <a href="/productos">Productos</a>
+        <a href="/carrito">Carrito</a>
+
+        <% if (user) { %>
+            <a href="/historial" class="btn-link">Historial</a>   <!-- ⭐ NUEVO -->
+        <% } %>
+        </nav>
+  </header>
+
+  <main class="carrito-main">
+    <h2>Resumen de tu carrito</h2>
+
+    <table class="tabla-carrito">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Precio</th>
+          <th>Cantidad</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% cart.forEach(item => { %>
+          <tr>
+            <td><%= item.nombre %></td>
+            <td>$<%= item.precio.toFixed(2) %></td>
+            <td><%= item.cantidad %></td>
+            <td>$<%= (item.precio * item.cantidad).toFixed(2) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <div class="carrito-total">
+      <h2>Total a pagar: $<%= total.toFixed(2) %></h2>
+
+      <form action="/checkout" method="POST">
+        <button type="submit" class="btn-primary">Confirmar compra</button>
+      </form>
+
+      <a href="/carrito" class="btn-secondary">Volver al carrito</a>
+    </div>
+  </main>
+</body>
+</html>

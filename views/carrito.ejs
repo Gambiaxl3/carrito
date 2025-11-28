@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mi carrito</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <h1>Mi carrito</h1>
+    <nav>
+      <a href="/productos">Seguir comprando</a>
+      <a href="/carrito">Carrito (<%= cart.length ? cart.reduce((s, i) => s + i.cantidad, 0) : 0 %>)</a>
+        <% if (user) { %>
+            <a href="/historial" class="btn-link">Historial</a>   
+            <span class="user-badge">Hola, <%= user.nombre %></span>
+        <% } %>
+
+   
+    </nav>
+  </header>
+
+  <main class="carrito-main">
+    <% if (cart.length === 0) { %>
+      <p>Tu carrito está vacío.</p>
+    <% } else { %>
+      <table class="tabla-carrito">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Precio</th>
+            <th>Cantidad</th>
+            <th>Subtotal</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% cart.forEach(item => { %>
+            <tr>
+              <td><%= item.nombre %></td>
+              <td>$<%= item.precio.toFixed(2) %></td>
+              <td>
+                <form action="/carrito/actualizar" method="POST" class="form-inline">
+                  <input type="hidden" name="productoId" value="<%= item.producto_id %>">
+                  <input type="number" name="cantidad" value="<%= item.cantidad %>" min="1">
+                  <button type="submit">Actualizar</button>
+                </form>
+              </td>
+              <td>$<%= (item.precio * item.cantidad).toFixed(2) %></td>
+              <td>
+                <form action="/carrito/eliminar" method="POST">
+                  <input type="hidden" name="productoId" value="<%= item.producto_id %>">
+                  <button type="submit">Quitar</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+
+      <div class="carrito-total">
+        <h2>Total: $<%= total.toFixed(2) %></h2>
+
+        <% if (!user) { %>
+          <p class="info-msg">Debes iniciar sesión para realizar la compra.</p>
+          <a href="/productos" class="btn-secondary">Ir a iniciar sesión</a>
+        <% } else { %>
+          <form action="/checkout" method="GET">
+            <button type="submit" class="btn-primary">Finalizar compra</button>
+          </form>
+        <% } %>
+      </div>
+    <% } %>
+  </main>
+</body>
+</html>

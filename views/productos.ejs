@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tienda Oficial FC Barcelona</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Tienda Oficial FC Barcelona</h1>
+      <p style="margin: 0; font-size: 0.9rem; color: #ffcc00;">Més que un club</p>
+    </div>
+    <nav>
+      <% if (user) { %>
+        <span class="user-badge"><%= user.nombre %></span>
+        <a href="/carrito">Carrito (<%= cartCount %>)</a>
+        <a href="/historial">Mis Órdenes</a>
+        <form action="/logout" method="POST" style="display: inline;">
+          <button type="submit" class="btn-link">Cerrar sesión</button>
+        </form>
+      <% } else { %>
+        <button class="btn-link" onclick="openModal('loginModal')">Iniciar sesión</button>
+        <button class="btn-link" onclick="openModal('registroModal')">Registrarse</button>
+      <% } %>
+    </nav>
+  </header>
+
+  <main>
+    <% if (loginError) { %>
+      <div class="error-msg">
+        <%= loginError %>
+      </div>
+    <% } %>
+
+    <% if (registroError) { %>
+      <div class="error-msg">
+        <%= registroError %>
+      </div>
+    <% } %>
+
+    <div class="productos-header">
+      <h2>Catálogo de Productos</h2>
+      <p><%= productos.length %> productos disponibles</p>
+    </div>
+
+    <div class="grid-productos">
+      <% productos.forEach(producto => { %>
+        <div class="producto-card <%= producto.stock === 0 ? 'producto-agotado' : '' %>">
+          <div class="producto-imagen">
+            <% if (producto.imagen_url) { %>
+              <img src="/<%= producto.imagen_url %>" alt="<%= producto.nombre %>" onerror="this.parentElement.innerHTML='<span class=\'placeholder-img\'>Sin imagen</span>'">
+            <% } else { %>
+              <span class="placeholder-img">Sin imagen</span>
+            <% } %>
+            
+            <!-- Badge de stock simplificado -->
+            <% if (producto.stock === 0) { %>
+              <span class="stock-badge agotado">AGOTADO</span>
+            <% } else if (producto.stock <= 5) { %>
+              <span class="stock-badge bajo">ÚLTIMAS <%= producto.stock %></span>
+            <% } %>
+          </div>
+          
+          <div class="producto-info">
+            <h3><%= producto.nombre %></h3>
+            <p class="producto-descripcion"><%= producto.descripcion || 'Producto oficial FC Barcelona' %></p>
+            
+            <!-- Stock simplificado -->
+            <div class="stock-info">
+              <% if (producto.stock > 0) { %>
+                <p class="stock-simple">Stock: <%= producto.stock %></p>
+              <% } else { %>
+                <p class="stock-simple agotado">Agotado</p>
+              <% } %>
+            </div>
+
+            <p class="precio">$<%= Number(producto.precio).toFixed(2) %> <span class="precio-moneda">MXN</span></p>
+            
+            <% if (producto.stock > 0) { %>
+              <form action="/carrito/agregar" method="POST" class="form-agregar">
+                <input type="hidden" name="productoId" value="<%= producto.id %>">
+                <button type="submit" class="btn-agregar">
+                  Agregar al carrito
+                </button>
+              </form>
+            <% } else { %>
+              <button disabled class="btn-agotado">
+                Producto agotado
+              </button>
+            <% } %>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </main>
+
+  <!-- Modal de Login -->
+  <div id="loginModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Iniciar sesión</h2>
+        <button class="modal-close" onclick="closeModal('loginModal')">&times;</button>
+      </div>
+      <form action="/login" method="POST" class="form-modal">
+        <label>
+          Correo electrónico
+          <input type="email" name="email" required placeholder="tu@email.com">
+        </label>
+        <label>
+          Contraseña
+          <input type="password" name="password" required placeholder="••••••••">
+        </label>
+        <button type="submit">Iniciar sesión</button>
+        <p style="text-align: center; margin-top: 12px; color: #666; font-size: 0.9rem;">
+          ¿No tienes cuenta? <a href="#" onclick="closeModal('loginModal'); openModal('registroModal'); return false;" style="color: #004d98; font-weight: bold; text-decoration: none;">Regístrate aquí</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de Registro -->
+  <div id="registroModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Crear cuenta</h2>
+        <button class="modal-close" onclick="closeModal('registroModal')">&times;</button>
+      </div>
+      <form action="/registro" method="POST" class="form-modal">
+        <label>
+          Nombre completo
+          <input type="text" name="nombre" required placeholder="Juan Pérez">
+        </label>
+        <label>
+          Correo electrónico
+          <input type="email" name="email" required placeholder="tu@email.com">
+        </label>
+        <label>
+          Contraseña
+          <input type="password" name="password" required placeholder="Mínimo 6 caracteres" minlength="6">
+        </label>
+        <button type="submit">Registrarse</button>
+        <p style="text-align: center; margin-top: 12px; color: #666; font-size: 0.9rem;">
+          ¿Ya tienes cuenta? <a href="#" onclick="closeModal('registroModal'); openModal('loginModal'); return false;" style="color: #004d98; font-weight: bold; text-decoration: none;">Inicia sesión aquí</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <footer style="text-align: center; padding: 30px; color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); margin-top: 40px;">
+    <p style="margin: 0; font-size: 1.1rem;"><strong>FC Barcelona Official Store</strong></p>
+    <p style="margin: 5px 0; font-size: 0.9rem; color: #ffcc00;">Més que un club - Productos oficiales</p>
+    <p style="margin: 10px 0; font-size: 0.8rem;">© <%= new Date().getFullYear() %> FC Barcelona. Todos los derechos reservados.</p>
+  </footer>
+
+  <script>
+    function openModal(id) {
+      document.getElementById(id).classList.add('visible');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('visible');
+    }
+
+    // Cerrar modal al hacer clic fuera
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.classList.remove('visible');
+        }
+      });
+    });
+
+    // Cerrar modal con tecla ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+          overlay.classList.remove('visible');
+        });
+      }
+    });
+
+    // Abrir modal automáticamente si hay error
+    <% if (loginError) { %>
+      openModal('loginModal');
+    <% } %>
+
+    <% if (registroError) { %>
+      openModal('registroModal');
+    <% } %>
+
+    // Animación de entrada para las cards
+    document.addEventListener('DOMContentLoaded', () => {
+      const cards = document.querySelectorAll('.producto-card');
+      cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'all 0.4s ease';
+        
+        setTimeout(() => {
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, index * 50);
+      });
+    });
+
+    // Feedback visual al agregar al carrito
+    document.querySelectorAll('.form-agregar').forEach(form => {
+      form.addEventListener('submit', (e) => {
+        const btn = e.target.querySelector('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = 'Agregado';
+        btn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+        btn.disabled = true;
+        
+        setTimeout(() => {
+          btn.innerHTML = originalHTML;
+          btn.style.background = '';
+          btn.disabled = false;
+        }, 1500);
+      });
+    });
+  </script>
+</body>
+</html>
