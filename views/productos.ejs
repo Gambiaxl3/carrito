@@ -56,7 +56,6 @@
               <span class="placeholder-img">Sin imagen</span>
             <% } %>
             
-            <!-- Badge de stock simplificado -->
             <% if (producto.stock === 0) { %>
               <span class="stock-badge agotado">AGOTADO</span>
             <% } else if (producto.stock <= 5) { %>
@@ -68,7 +67,6 @@
             <h3><%= producto.nombre %></h3>
             <p class="producto-descripcion"><%= producto.descripcion || 'Producto oficial FC Barcelona' %></p>
             
-            <!-- Stock simplificado -->
             <div class="stock-info">
               <% if (producto.stock > 0) { %>
                 <p class="stock-simple">Stock: <%= producto.stock %></p>
@@ -97,7 +95,6 @@
     </div>
   </main>
 
-  <!-- Modal de Login -->
   <div id="loginModal" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
@@ -121,7 +118,6 @@
     </div>
   </div>
 
-  <!-- Modal de Registro -->
   <div id="registroModal" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
@@ -164,7 +160,6 @@
       document.getElementById(id).classList.remove('visible');
     }
 
-    // Cerrar modal al hacer clic fuera
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
       overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
@@ -173,7 +168,6 @@
       });
     });
 
-    // Cerrar modal con tecla ESC
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
@@ -182,7 +176,6 @@
       }
     });
 
-    // Abrir modal automáticamente si hay error
     <% if (loginError) { %>
       openModal('loginModal');
     <% } %>
@@ -191,7 +184,6 @@
       openModal('registroModal');
     <% } %>
 
-    // Animación de entrada para las cards
     document.addEventListener('DOMContentLoaded', () => {
       const cards = document.querySelectorAll('.producto-card');
       cards.forEach((card, index) => {
@@ -206,7 +198,6 @@
       });
     });
 
-    // Feedback visual al agregar al carrito
     document.querySelectorAll('.form-agregar').forEach(form => {
       form.addEventListener('submit', (e) => {
         const btn = e.target.querySelector('button');

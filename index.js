@@ -84,7 +84,13 @@ app.post('/carrito/agregar', (req, res) => {
   db.query(sql, [productoId], (err, results) => {
     if (err) {
       console.error('Error al buscar producto:', err);
-      return res.status(500).send('Error al agregar al carrito');
+      return res.render('error', {
+        titulo: 'Error al agregar producto',
+        mensaje: 'Hubo un problema al agregar el producto al carrito.',
+        detalles: [],
+        user: req.session.user,
+        cartCount: req.session.cart ? req.session.cart.reduce((sum, item) => sum + item.cantidad, 0) : 0
+      });
     }
 
     if (results.length === 0) {
@@ -92,10 +98,32 @@ app.post('/carrito/agregar', (req, res) => {
     }
 
     const producto = results[0];
+    
+    // Verificar si hay stock disponible
+    if (producto.stock <= 0) {
+      return res.render('error', {
+        titulo: 'Producto agotado',
+        mensaje: `Lo sentimos, el producto "${producto.nombre}" está agotado actualmente.`,
+        detalles: ['Este producto no tiene unidades disponibles en este momento.'],
+        user: req.session.user,
+        cartCount: req.session.cart ? req.session.cart.reduce((sum, item) => sum + item.cantidad, 0) : 0
+      });
+    }
+
     const cart = req.session.cart;
     const existing = cart.find((item) => item.producto_id === producto.id);
 
+    // Verificar si al agregar superaría el stock disponible
     if (existing) {
+      if (existing.cantidad >= producto.stock) {
+        return res.render('error', {
+          titulo: 'Stock insuficiente',
+          mensaje: `Ya tienes la cantidad máxima disponible de "${producto.nombre}" en tu carrito.`,
+          detalles: [`Stock disponible: ${producto.stock} unidades`, `En tu carrito: ${existing.cantidad} unidades`],
+          user: req.session.user,
+          cartCount: req.session.cart ? req.session.cart.reduce((sum, item) => sum + item.cantidad, 0) : 0
+        });
+      }
       existing.cantidad += 1;
     } else {
       cart.push({
@@ -129,15 +157,44 @@ app.post('/carrito/actualizar', (req, res) => {
     return res.redirect('/carrito');
   }
 
-  const cart = req.session.cart;
-  const item = cart.find((i) => i.producto_id == productoId);
+  // Verificar stock disponible antes de actualizar
+  const sql = 'SELECT stock, nombre FROM productos WHERE id = ?';
+  db.query(sql, [productoId], (err, results) => {
+    if (err) {
+      console.error('Error al verificar stock:', err);
+      return res.redirect('/carrito');
+    }
 
-  if (item) {
-    item.cantidad = qty;
-  }
+    if (results.length === 0) {
+      return res.redirect('/carrito');
+    }
 
-  req.session.cart = cart;
-  res.redirect('/carrito');
+    const producto = results[0];
+
+    // Validar que la cantidad no exceda el stock
+    if (qty > producto.stock) {
+      return res.render('error', {
+        titulo: 'Stock insuficiente',
+        mensaje: `La cantidad solicitada de "${producto.nombre}" excede el stock disponible.`,
+        detalles: [
+          `Cantidad solicitada: ${qty} unidades`,
+          `Stock disponible: ${producto.stock} unidades`
+        ],
+        user: req.session.user,
+        cartCount: req.session.cart ? req.session.cart.reduce((sum, item) => sum + item.cantidad, 0) : 0
+      });
+    }
+
+    const cart = req.session.cart;
+    const item = cart.find((i) => i.producto_id == productoId);
+
+    if (item) {
+      item.cantidad = qty;
+    }
+
+    req.session.cart = cart;
+    res.redirect('/carrito');
+  });
 });
 
 app.post('/carrito/eliminar', (req, res) => {
@@ -231,9 +288,9 @@ app.post('/logout', (req, res) => {
   });
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor escuchando en http://localhost:${PORT}`);
+  console.log(`Servidor escuchando en puerto ${PORT}`);
 });
 
 
@@ -282,13 +339,18 @@ app.post('/checkout', requireLogin, (req, res) => {
 
   Promise.all(checkStockPromises)
     .then(() => {
-      // Si hay stock suficiente, crear la orden
       const insertOrdenSql = 'INSERT INTO ordenes (usuario_id, total) VALUES (?, ?)';
 
       db.query(insertOrdenSql, [userId, total], (err, result) => {
         if (err) {
           console.error('Error al crear orden:', err);
-          return res.status(500).send('Error al crear la orden.');
+          return res.render('error', {
+            titulo: 'Error al procesar la orden',
+            mensaje: 'Hubo un problema al procesar tu orden. Por favor, intenta nuevamente.',
+            detalles: [],
+            user: req.session.user,
+            cartCount: req.session.cart.length
+          });
         }
 
         const ordenId = result.insertId;
@@ -354,7 +416,23 @@ app.post('/checkout', requireLogin, (req, res) => {
     })
     .catch(error => {
       console.error('❌ Error de stock:', error);
-      return res.status(400).send(error.message);
+      
+      // Extraer información detallada del error
+      const errorMessage = error.message;
+      const detalles = [];
+      
+      // Si el error menciona productos específicos, extraerlos
+      if (errorMessage.includes('Stock insuficiente')) {
+        detalles.push(errorMessage);
+      }
+      
+      return res.render('error', {
+        titulo: 'Stock insuficiente',
+        mensaje: 'Lo sentimos, algunos productos en tu carrito no tienen suficiente stock disponible.',
+        detalles: detalles,
+        user: req.session.user,
+        cartCount: req.session.cart.length
+      });
     });
 });
 
