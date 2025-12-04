@@ -7,7 +7,7 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME_CLEVER,
   port: process.env.DB_PORT_CLEVER || 3306,
   waitForConnections: true,
-  connectionLimit: 5,  // 👈 LIMITE EXACTO QUE PERMITE CLEVER CLOUD FREE
+  connectionLimit: 5,  
   queueLimit: 0,
   ssl: {
     rejectUnauthorized: false
